@@ -1,0 +1,79 @@
+[tool.briefcase]
+project_name = "Youtube Video Maker"
+bundle = "com.knockheart"
+version = "0.0.1"
+url = "https://www.youtube.com/channel/UCllT2y0NQrwSQMoejXa8TiA"
+license = "GNU General Public License v3 or later (GPLv3+)"
+author = 'Abhimanyu HK'
+author_email = "manyu1994@hotmail.com"
+
+[tool.briefcase.app.youtube_video_maker]
+formal_name = "Youtube Video Maker"
+description = "Youtube Video Maker"
+icon = "src/youtube_video_maker/resources/youtube_video_maker"
+sources = ['src/youtube_video_maker']
+requires = [
+"pytesseract",
+"pillow",
+"gTTS",
+"playsound==1.2.2",
+"pyttsx3",
+"mutagen",
+"moviepy"
+]
+
+
+[tool.briefcase.app.youtube_video_maker.macOS]
+requires = [
+    'toga-cocoa>=0.3.0.dev38',
+    'std-nslog~=1.0.0'
+]
+
+[tool.briefcase.app.youtube_video_maker.linux]
+requires = [
+    'toga-gtk>=0.3.0.dev38',
+]
+
+[tool.briefcase.app.youtube_video_maker.linux.appimage]
+system_requires = [
+    'gir1.2-webkit-3.0',
+    'libcairo2-dev',
+    'libgirepository1.0-dev',
+    'libgtk-3-dev',
+    'libpango1.0-dev',
+    'librsvg2-dev',
+    'libwebkitgtk-3.0-0',
+]
+linuxdeploy_plugins = [
+    'DEPLOY_GTK_VERSION=3 gtk',
+]
+
+[tool.briefcase.app.youtube_video_maker.linux.flatpak]
+flatpak_runtime = 'org.gnome.Platform'
+flatpak_runtime_version = '42'
+flatpak_sdk = 'org.gnome.Sdk'
+
+[tool.briefcase.app.youtube_video_maker.windows]
+requires = [
+    'toga-winforms>=0.3.0.dev38',
+]
+
+# Mobile deployments
+[tool.briefcase.app.youtube_video_maker.iOS]
+requires = [
+    'toga-iOS>=0.3.0.dev38',
+    'std-nslog~=1.0.0'
+]
+
+[tool.briefcase.app.youtube_video_maker.android]
+requires = [
+    'toga-android>=0.3.0.dev38'
+]
+
+[tool.briefcase.app.youtube_video_maker.web]
+requires = [
+    # Workaround; toga-web 0.3.0.dev38 doesn't include toga-core as a dependency.
+    "toga-core>=0.3.0.dev38",
+    "toga-web>=0.3.0.dev38",
+]
+style_framework = "Bootstrap v4.6"
