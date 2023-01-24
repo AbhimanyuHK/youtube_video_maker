@@ -19,7 +19,8 @@ requires = [
 "playsound==1.2.2",
 "pyttsx3",
 "mutagen",
-"moviepy"
+"moviepy",
+"setuptools",
 ]
 
 
@@ -56,6 +57,7 @@ flatpak_sdk = 'org.gnome.Sdk'
 [tool.briefcase.app.youtube_video_maker.windows]
 requires = [
     'toga-winforms>=0.3.0.dev38',
+    "setuptools"
 ]
 
 # Mobile deployments
@@ -67,7 +69,7 @@ requires = [
 
 [tool.briefcase.app.youtube_video_maker.android]
 requires = [
-    'toga-android>=0.3.0.dev38'
+    'toga-android>=0.3.0.dev38',
 ]
 
 [tool.briefcase.app.youtube_video_maker.web]

@@ -1,26 +1,37 @@
 import os
 import traceback
-from pathlib import Path
 
 import toga
 from toga.constants import COLUMN
 from toga.style import Pack
 
-from .service.image_text_to_audio import ImageTextToAudio
+from .service import MetaParams
+from .service.image_text_to_audio import ImageToText, TextToAudio
 from .service.mp3_to_mp4 import MP3ToMP4
 
-BASE_OUTPUT_APP = "ytvm_output"
+# BASE_OUTPUT_APP = get_absolute_path(".temp")
+BASE_OUTPUT_APP = ".youtube_video_maker"
 OUTPUT_MP3_PATH = f"{BASE_OUTPUT_APP}/mp3/audio_output.mp3"
 OUTPUT_MP4_PATH = f"{BASE_OUTPUT_APP}/mp4/video_output.mp4"
 OUTPUT_TEMP_PATH = f"{BASE_OUTPUT_APP}/temp/"
+OUTPUT_TEXT_PATH = f"{BASE_OUTPUT_APP}/text/text_output.txt"
+
+MetaParams.text_output_file = OUTPUT_TEXT_PATH
+MetaParams.video_path_name = OUTPUT_MP4_PATH
+MetaParams.audio_file_name = OUTPUT_MP3_PATH
+MetaParams.temp_path = OUTPUT_TEMP_PATH
 
 
 def create_folders(md_path):
-    input_folder = Path(md_path)
-    if input_folder.is_dir():
-        pass
-    else:
-        input_folder.mkdir(parents=True)
+    # input_folder = Path(md_path)
+    # if input_folder.is_dir():
+    #     pass
+    # else:
+    #     input_folder.mkdir(parents=True)
+
+    is_existing = os.path.isdir(md_path)
+    if not is_existing:
+        os.makedirs(md_path, exist_ok=True)
 
     print(md_path)
 
@@ -36,6 +47,7 @@ class YoutubeVideoMaker(toga.App):
         create_folders(f"{BASE_OUTPUT_APP}/mp3/")
         create_folders(f"{BASE_OUTPUT_APP}/mp4/")
         create_folders(f"{BASE_OUTPUT_APP}/temp/")
+        create_folders(f"{BASE_OUTPUT_APP}/text/")
         self.label.text = "Ready."
 
     async def action_btn_open_video_background_image_dialog(self, widget):
@@ -55,28 +67,37 @@ class YoutubeVideoMaker(toga.App):
         self.label.text = "Creating New video. Please wait a moment."
         try:
 
-            ita = ImageTextToAudio(
-                text_image_path=self.text_file_name,
-                audio_file_path=OUTPUT_MP3_PATH
-            )
-            ita.start()
+            # ImageToText(MetaParams).image_to_text()
+            #
+            # text = open(MetaParams.text_output_file).read()
 
-            if ita.title:
-                output_mp4_file = OUTPUT_MP4_PATH.split("/")
+            text = self.converted_text.value
+            audio_object = TextToAudio(MetaParams).text_to_audio(text)
+
+            MetaParams.title = text.strip().split("\n")[0].strip()
+
+            if MetaParams.title:
+                output_mp4_file = MetaParams.video_path_name.split("/")
                 output_mp4_file.pop()
-                output_mp4_file.append(f"{ita.title}.mp4")
-                output_mp4_file = "/".join(output_mp4_file)
-            else:
-                output_mp4_file = OUTPUT_MP4_PATH
+                output_mp4_file.append(f"{MetaParams.title}.mp4")
+                MetaParams.video_path_name = "/".join(output_mp4_file)
+
+            if not MetaParams.video_path_name:
+                MetaParams.video_path_name = OUTPUT_MP4_PATH
+
+            MetaParams.input_mp4_image_path = self.file_video_background_image
 
             MP3ToMP4(
-                audio_path=ita.audio_file_name,
-                video_path_name=output_mp4_file,
-                temp_path=OUTPUT_TEMP_PATH,
-                input_mp4_image_path=self.file_video_background_image
+                audio_path=MetaParams.audio_file_name,
+                video_path_name=MetaParams.video_path_name,
+                temp_path=MetaParams.temp_path,
+                input_mp4_image_path=MetaParams.input_mp4_image_path,
+                audio_object=audio_object
             )
             self.label.text = "Created New video"
         except Exception as e:
+            print(e)
+            print(e.__traceback__)
 
             self.main_window.stack_trace_dialog(
                 "Error!",
@@ -84,6 +105,7 @@ class YoutubeVideoMaker(toga.App):
                 "".join(traceback.format_stack()),
             )
             self.label.text = str(e)
+            raise e
 
     async def action_btn_open_input_text_image_dialog(self, widget):
         try:
@@ -92,6 +114,10 @@ class YoutubeVideoMaker(toga.App):
             )
             if file_name is not None:
                 self.text_file_name = file_name
+                MetaParams.path_to_image = file_name
+                data = ImageToText(MetaParams).image_to_text()
+                self.converted_text.value = data
+
             else:
                 self.label.text = "No file selected!"
         except ValueError:
@@ -112,9 +138,15 @@ class YoutubeVideoMaker(toga.App):
         self.window_label.text = f"{num_windows} secondary window(s) open"
 
     def startup(self):
+
+        print(__file__)
         # Set up main window
         self.main_window = toga.MainWindow(title=self.name)
         self.on_exit = self.exit_handler
+
+        self.input_mp4_image_path = None
+
+        self.total_text = toga.TextInput()
 
         # Label to show responses.
         self.label = toga.Label("Ready.", style=Pack(padding_top=20))
@@ -124,11 +156,16 @@ class YoutubeVideoMaker(toga.App):
         self.set_window_label_text(0)
 
         # Buttons
-        btn_style = Pack(flex=1)
+        btn_style = Pack(flex=1, padding=20)
+
+        def x_print(widget):
+            print("ddddddddddddddd")
 
         btn_open_input_text_image = toga.Button(
             "Select Text Image File", on_press=self.action_btn_open_input_text_image_dialog, style=btn_style
         )
+        self.converted_text = toga.MultilineTextInput()
+
         btn_open_video_background_image = toga.Button(
             "Select Video Background Image", on_press=self.action_btn_open_video_background_image_dialog,
             style=btn_style
@@ -147,6 +184,7 @@ class YoutubeVideoMaker(toga.App):
         box = toga.Box(
             children=[
                 btn_open_input_text_image,
+                self.converted_text,
                 btn_open_video_background_image,
                 btn_create_video,
                 btn_clear,

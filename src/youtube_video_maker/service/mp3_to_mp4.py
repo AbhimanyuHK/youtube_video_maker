@@ -1,4 +1,6 @@
 # Loading all the packages required
+from io import BytesIO
+
 from mutagen.mp3 import MP3
 from PIL import Image
 from pathlib import Path
@@ -12,12 +14,15 @@ an audio to a video using a list of images.
 
 class MP3ToMP4:
 
-    def __init__(self, audio_path, video_path_name, temp_path, input_mp4_image_path):
+    def __init__(self, audio_path, video_path_name, temp_path, input_mp4_image_path, audio_object):
         self.temp_path = temp_path
         self.audio_path = audio_path
         self.video_path_name = video_path_name
 
         self.input_mp4_image_path = input_mp4_image_path
+        self.audio_object = audio_object
+
+        self.video_io = self.temp_path + "temp.gif"
 
         # Calling the create_video() method.
         self.create_video()
@@ -29,8 +34,11 @@ class MP3ToMP4:
 
         :return: length of the MP3 file
         """
-        song = MP3(self.audio_path)
-        return int(song.info.length)
+        try:
+            song = MP3(self.audio_path)
+            return int(song.info.length)
+        except Exception as e:
+            print(f"get_length: {e}")
 
     def get_images(self):
         """
@@ -43,12 +51,19 @@ class MP3ToMP4:
 
         :return: list of opened images
         """
-        # path_images = Path(self.input_mp4_image_path)
-        # images = list(path_images.glob('*.png'))
-        image_list = list()
-        image = Image.open(self.input_mp4_image_path).resize((1920, 1080), Image.ANTIALIAS)
-        image_list.append(image)
-        return image_list
+        try:
+            image_list = list()
+            # path_images = Path(self.input_mp4_image_path)
+            # images = list(path_images.glob('*.png'))
+            # for image_name in images:
+            #     image = Image.open(image_name).resize((1920, 1080), Image.ANTIALIAS)
+            #     image_list.append(image)
+
+            image = Image.open(self.input_mp4_image_path).resize((1920, 1080), Image.ANTIALIAS)
+            image_list.append(image)
+            return image_list
+        except Exception as e:
+            print(f"get_images: {e}")
 
     def create_video(self):
         """
@@ -60,18 +75,21 @@ class MP3ToMP4:
 
         :return: None
         """
-        length_audio = self.get_length()
-        image_list = self.get_images()
-        duration = int(length_audio / len(image_list)) * 1000
-        image_list[0].save(
-            self.temp_path + "temp.gif",
-            save_all=True,
-            append_images=image_list[1:],
-            duration=duration
-        )
+        try:
+            length_audio = self.get_length()
+            image_list = self.get_images()
+            duration = int(length_audio / len(image_list)) * 1000
+            image_list[0].save(
+                self.video_io,
+                save_all=True,
+                append_images=image_list[1:],
+                duration=duration
+            )
 
-        # Calling the combine_audio() method.
-        self.combine_audio()
+            # Calling the combine_audio() method.
+            self.combine_audio()
+        except Exception as e:
+            print(f"create_video: {e}")
 
     def combine_audio(self):
         """
@@ -82,7 +100,11 @@ class MP3ToMP4:
 
         :return: None
         """
-        video = editor.VideoFileClip(self.temp_path + "temp.gif")
-        audio = editor.AudioFileClip(self.audio_path)
-        final_video = video.set_audio(audio)
-        final_video.write_videofile(self.video_path_name, fps=60)
+        video = editor.VideoFileClip(self.video_io)
+        try:
+
+            audio = editor.AudioFileClip(self.audio_path)
+            final_video = video.set_audio(audio)
+            final_video.write_videofile(self.video_path_name, fps=60)
+        except Exception as e:
+            print(f"combine_audio: {e}")
