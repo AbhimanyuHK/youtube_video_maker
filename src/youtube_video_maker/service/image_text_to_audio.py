@@ -6,8 +6,10 @@ from gtts import gTTS
 from playsound import playsound
 
 from . import MetaParams
+from .. import Metadata
 
-pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+
+pytesseract.tesseract_cmd = Metadata.tesseract_cmd
 
 END_NOTE = "Please Like, Share, Subscribe, and Thank you, for watching."
 
@@ -33,9 +35,20 @@ class ImageToText:
         self.meta_params: MetaParams = meta_params
 
     def image_to_text(self):
-        img = Image.open(self.meta_params.path_to_image)
-        text = pytesseract.image_to_string(img)
-        text = [" ".join(x.split('\n')) for x in text.split("\n\n")]
+
+        text_list = []
+        if isinstance(self.meta_params.path_to_image, list):
+            self.meta_params.path_to_image = list(sorted(self.meta_params.path_to_image))
+            for image in self.meta_params.path_to_image:
+                img = Image.open(image)
+                text = pytesseract.image_to_string(img)
+                text_list.append(text)
+        else:
+            img = Image.open(self.meta_params.path_to_image)
+            text = pytesseract.image_to_string(img)
+            text_list.append(text)
+
+        text = [" ".join(x.split('\n')) for text in text_list for x in text.split("\n\n")]
         text.append(END_NOTE)
         self.meta_params.title = text[0]
         text = "\n\n".join(text)
